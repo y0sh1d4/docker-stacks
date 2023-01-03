@@ -4,7 +4,7 @@
 # Ubuntu 18.04 (bionic) from 2018-05-26
 # https://github.com/docker-library/official-images/commit/aac6a45b9eb2bffb8102353c350d341a410fb169
 #ARG BASE_CONTAINER=ubuntu:bionic-20180526@sha256:c8c275751219dadad8fa56b3ac41ca6cb22219ff117ca98fe82b42f24e1ba64e
-ARG BASE_CONTAINER=nvidia/cuda:9.0-cudnn7-devel-ubuntu16.04
+ARG BASE_CONTAINER=nvidia/cuda:11.2.0-cudnn8-runtime-ubuntu20.04
 FROM $BASE_CONTAINER
 
 LABEL maintainer="Jupyter Project <jupyter@googlegroups.com>"
@@ -61,18 +61,18 @@ RUN mkdir /home/$NB_USER/work && \
     fix-permissions /home/$NB_USER
 
 # Install conda as jovyan and check the md5 sum provided on the download site
-ENV MINICONDA_VERSION 4.5.11
+ENV MINICONDA_VERSION 22.11.1-1
 RUN cd /tmp && \
-    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh && \
-    echo "e1045ee415162f944b6aebfe560b8fee *Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh" | md5sum -c - && \
-    /bin/bash Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh -f -b -p $CONDA_DIR && \
-    rm Miniconda3-${MINICONDA_VERSION}-Linux-x86_64.sh && \
+    wget --quiet https://repo.continuum.io/miniconda/Miniconda3-py310_${MINICONDA_VERSION}-Linux-x86_64.sh && \
+    echo "00938c3534750a0e4069499baf8f4e6dc1c2e471c86a59caa0dd03f4a9269db6 *Miniconda3-py310_${MINICONDA_VERSION}-Linux-x86_64.sh" | sha256sum -c - && \
+    /bin/bash Miniconda3-py310_${MINICONDA_VERSION}-Linux-x86_64.sh -f -b -p $CONDA_DIR && \
+    rm Miniconda3-py310_${MINICONDA_VERSION}-Linux-x86_64.sh && \
     $CONDA_DIR/bin/conda config --system --prepend channels conda-forge && \
     $CONDA_DIR/bin/conda config --system --set auto_update_conda false && \
     $CONDA_DIR/bin/conda config --system --set show_channel_urls true && \
     $CONDA_DIR/bin/conda install --quiet --yes conda="${MINICONDA_VERSION%.*}.*" && \
     $CONDA_DIR/bin/conda update --all --quiet --yes && \
-    conda clean -tipsy && \
+    conda clean -tip && \
     rm -rf /home/$NB_USER/.cache/yarn && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
@@ -80,7 +80,7 @@ RUN cd /tmp && \
 # Install Tini
 RUN conda install --quiet --yes 'tini=0.18.0' && \
     conda list tini | grep tini | tr -s ' ' | cut -d ' ' -f 1,2 >> $CONDA_DIR/conda-meta/pinned && \
-    conda clean -tipsy && \
+    conda clean -tip && \
     fix-permissions $CONDA_DIR && \
     fix-permissions /home/$NB_USER
 
@@ -91,11 +91,11 @@ RUN conda install --quiet --yes 'tini=0.18.0' && \
 # Do all this in a single RUN command to avoid duplicating all of the
 # files across image layers when the permissions change
 RUN conda install --quiet --yes \
-    'notebook=5.7.2' \
-    'jupyterhub=0.9.4' \
-    'jupyterlab=0.35.4' && \
-    conda clean -tipsy && \
-    jupyter labextension install @jupyterlab/hub-extension@^0.12.0 && \
+    'notebook' \
+    'jupyterhub' \
+    'jupyterlab' && \
+    conda clean -tip && \
+    jupyter labextension install @jupyterlab/hub-extension && \
     npm cache clean --force && \
     jupyter notebook --generate-config && \
     rm -rf $CONDA_DIR/share/jupyter/lab/staging && \
@@ -120,4 +120,5 @@ COPY jupyter_notebook_config.py /etc/jupyter/
 RUN fix-permissions /etc/jupyter/
 
 # Switch back to jovyan to avoid accidental container runs as root
+ENV LD_LIBRARY_PATH /usr/local/cuda-11.2/compat
 USER $NB_UID

@@ -1,6 +1,6 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
-ARG BASE_CONTAINER=jolibrain/base-notebook-gpu
+ARG BASE_CONTAINER=base-notebook-gpu
 FROM $BASE_CONTAINER
 
 LABEL maintainer="Emmanuel Benazera <emmanuel.benazera@jolibrain.com>"
@@ -21,9 +21,9 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     netcat \
     pandoc \
     python-dev \
+    texlive-base \
     texlive-fonts-extra \
     texlive-fonts-recommended \
-    texlive-generic-recommended \
     texlive-latex-base \
     texlive-latex-extra \
     texlive-xetex \
@@ -32,4 +32,4 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Switch back to jovyan to avoid accidental container runs as root
-USER $NB_UID
+# USER $NB_UID
